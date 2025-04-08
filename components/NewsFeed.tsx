@@ -93,25 +93,23 @@ export default function NewsFeed({ searchQuery, showUnread }: NewsFeedProps) {
 		try {
 			setLoading(true);
 			setError(null);
-			const response = await axios.get(
-				`https://newsapi.org/v2/everything?q="Elden Ring"&language=en&sortBy=publishedAt&page=${page}&pageSize=${articlesPerPage}&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`
-			);
 
-			if (response.data.articles && Array.isArray(response.data.articles)) {
-				const newArticles = response.data.articles.map((article: any) => ({
-					...categorizeArticle(article),
-					isRead: false
-				}));
+			const response = await axios.get(`/api/news?page=${page}&pageSize=9`);
+			const newArticles = response.data.articles.map((article: any) => ({
+				...article,
+				category: categorizeArticle(article),
+				read: false
+			}));
 
+			if (page === 1) {
 				setArticles(newArticles);
-				setTotalResults(response.data.totalResults);
-				setTotalPages(Math.ceil(response.data.totalResults / articlesPerPage));
 			} else {
-				throw new Error("Invalid response format");
+				setArticles((prev) => [...prev, ...newArticles]);
 			}
+			setTotalResults(response.data.totalResults);
 		} catch (err) {
+			setError("Failed to fetch news. Please try again later.");
 			console.error("Error fetching news:", err);
-			setError(err instanceof Error ? err.message : "Failed to fetch news");
 		} finally {
 			setLoading(false);
 		}

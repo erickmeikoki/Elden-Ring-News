@@ -42,6 +42,9 @@ export default function NewsCard({
 	onReadChange
 }: NewsCardProps) {
 	const [isBookmarked, setIsBookmarked] = useState(false);
+	const [showSummary, setShowSummary] = useState(false);
+	const [summary, setSummary] = useState<string | null>(null);
+	const [isLoadingSummary, setIsLoadingSummary] = useState(false);
 	const viewCount = Math.floor(Math.random() * 100);
 
 	const publishedDate = new Date(article.publishedAt);
@@ -104,6 +107,29 @@ export default function NewsCard({
 			}
 		} catch (error) {
 			toast.error("Failed to share article");
+		}
+	};
+
+	const generateSummary = async () => {
+		try {
+			setIsLoadingSummary(true);
+			const response = await fetch("/api/summarize", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({ content: article.description })
+			});
+
+			const data = await response.json();
+			if (data.summary) {
+				setSummary(data.summary);
+				setShowSummary(true);
+			}
+		} catch (error) {
+			toast.error("Failed to generate summary");
+		} finally {
+			setIsLoadingSummary(false);
 		}
 	};
 
@@ -191,6 +217,17 @@ export default function NewsCard({
 					</p>
 				</a>
 
+				{showSummary && (
+					<div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+						<h3 className="font-semibold mb-2 text-gray-900 dark:text-white">
+							AI Summary
+						</h3>
+						<p className="text-gray-600 dark:text-gray-300 text-sm">
+							{summary}
+						</p>
+					</div>
+				)}
+
 				<div className="mt-auto pt-4 flex items-center justify-between border-t border-gray-100 dark:border-gray-700">
 					<div className="flex flex-col">
 						<span className="text-sm text-gray-500 dark:text-gray-400">
@@ -201,6 +238,18 @@ export default function NewsCard({
 						</span>
 					</div>
 					<div className="flex items-center gap-3">
+						<button
+							onClick={generateSummary}
+							disabled={isLoadingSummary}
+							className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+								isLoadingSummary
+									? "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+									: "bg-blue-500 text-white hover:bg-blue-600"
+							}`}
+							title="Generate AI Summary"
+						>
+							{isLoadingSummary ? "Generating..." : "Summary"}
+						</button>
 						<button
 							onClick={toggleBookmark}
 							className={`transition-colors ${
