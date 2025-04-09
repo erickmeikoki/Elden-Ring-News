@@ -1,11 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-	output: "export",
 	images: {
-		domains: ["newsapi.org"],
+		domains: [
+			"images.unsplash.com",
+			"via.placeholder.com",
+			"www.ign.com",
+			"assets.reedpopcdn.com",
+			"i.ytimg.com"
+		],
 		unoptimized: true
 	},
-	trailingSlash: true
+	output: "standalone"
 };
 
 module.exports = nextConfig;

@@ -96,9 +96,14 @@ export default function NewsFeed({ searchQuery, showUnread }: NewsFeedProps) {
 
 			const response = await axios.get(`/api/news?page=${page}&pageSize=9`);
 			const newArticles = response.data.articles.map((article: any) => ({
-				...article,
-				category: categorizeArticle(article),
-				read: false
+				title: article.title,
+				description: article.description,
+				url: article.url,
+				urlToImage: article.urlToImage,
+				publishedAt: article.publishedAt,
+				source: article.source,
+				category: categorizeArticle(article).category,
+				isRead: false
 			}));
 
 			if (page === 1) {
@@ -107,6 +112,7 @@ export default function NewsFeed({ searchQuery, showUnread }: NewsFeedProps) {
 				setArticles((prev) => [...prev, ...newArticles]);
 			}
 			setTotalResults(response.data.totalResults);
+			setTotalPages(Math.ceil(response.data.totalResults / articlesPerPage));
 		} catch (err) {
 			setError("Failed to fetch news. Please try again later.");
 			console.error("Error fetching news:", err);

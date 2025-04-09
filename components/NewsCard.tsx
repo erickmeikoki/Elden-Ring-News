@@ -122,12 +122,24 @@ export default function NewsCard({
 			});
 
 			const data = await response.json();
+
+			if (!response.ok) {
+				console.error("API Error Response:", data);
+				throw new Error(data.error || "Failed to generate summary");
+			}
+
 			if (data.summary) {
 				setSummary(data.summary);
 				setShowSummary(true);
+			} else {
+				console.error("No summary in response:", data);
+				throw new Error("No summary generated");
 			}
 		} catch (error) {
-			toast.error("Failed to generate summary");
+			console.error("Error generating summary:", error);
+			toast.error(
+				error instanceof Error ? error.message : "Failed to generate summary"
+			);
 		} finally {
 			setIsLoadingSummary(false);
 		}
