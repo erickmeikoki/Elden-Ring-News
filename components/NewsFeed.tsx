@@ -92,30 +92,29 @@ export default function NewsFeed({ searchQuery, showUnread }: NewsFeedProps) {
 	const fetchNews = async (page: number) => {
 		try {
 			setLoading(true);
-			setError(null);
+			const response = await axios.get(
+				`/api/news?page=${page}&pageSize=9&category=${selectedCategory}&search=${searchQuery}`
+			);
+			const data = response.data;
 
-			const response = await axios.get(`/api/news?page=${page}&pageSize=9`);
-			const newArticles = response.data.articles.map((article: any) => ({
-				title: article.title,
-				description: article.description,
-				url: article.url,
-				urlToImage: article.urlToImage,
-				publishedAt: article.publishedAt,
-				source: article.source,
-				category: categorizeArticle(article).category,
-				isRead: false
-			}));
+			if (data.articles) {
+				const articlesWithReadStatus = data.articles.map((article: any) => ({
+					...article,
+					category: selectedCategory,
+					read: false
+				}));
 
-			if (page === 1) {
-				setArticles(newArticles);
-			} else {
-				setArticles((prev) => [...prev, ...newArticles]);
+				if (page === 1) {
+					setArticles(articlesWithReadStatus);
+				} else {
+					setArticles((prev) => [...prev, ...articlesWithReadStatus]);
+				}
+				setTotalResults(data.totalResults);
+				setError(null);
 			}
-			setTotalResults(response.data.totalResults);
-			setTotalPages(Math.ceil(response.data.totalResults / articlesPerPage));
 		} catch (err) {
-			setError("Failed to fetch news. Please try again later.");
 			console.error("Error fetching news:", err);
+			setError("Failed to load news. Please try again later.");
 		} finally {
 			setLoading(false);
 		}
