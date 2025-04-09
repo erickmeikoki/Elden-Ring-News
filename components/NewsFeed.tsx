@@ -89,12 +89,21 @@ export default function NewsFeed({ searchQuery, showUnread }: NewsFeedProps) {
 		return { ...article, category: "all" };
 	};
 
-	const fetchNews = async (page: number) => {
+	const fetchNews = async (page: number, retryCount = 0) => {
 		try {
 			setLoading(true);
+			setError(null);
+
 			const response = await axios.get(
-				`/api/news?page=${page}&pageSize=9&category=${selectedCategory}&search=${searchQuery}`
+				`/api/news?page=${page}&pageSize=9&category=${selectedCategory}&search=${searchQuery}`,
+				{
+					headers: {
+						"Accept": "application/json",
+						"Content-Type": "application/json"
+					}
+				}
 			);
+
 			const data = response.data;
 
 			if (data.articles) {
@@ -110,11 +119,27 @@ export default function NewsFeed({ searchQuery, showUnread }: NewsFeedProps) {
 					setArticles((prev) => [...prev, ...articlesWithReadStatus]);
 				}
 				setTotalResults(data.totalResults);
-				setError(null);
+				setTotalPages(Math.ceil(data.totalResults / articlesPerPage));
 			}
-		} catch (err) {
+		} catch (err: any) {
 			console.error("Error fetching news:", err);
-			setError("Failed to load news. Please try again later.");
+
+			// If it's a 426 error and we haven't retried too many times, try again
+			if (err.response?.status === 426 && retryCount < 3) {
+				setTimeout(() => {
+					fetchNews(page, retryCount + 1);
+				}, 1000 * (retryCount + 1)); // Exponential backoff
+				return;
+			}
+
+			// Handle specific error cases
+			if (err.response?.status === 500) {
+				setError("Server error. Please try again later.");
+			} else if (err.response?.data?.details) {
+				setError(err.response.data.details);
+			} else {
+				setError("Failed to load news. Please try again later.");
+			}
 		} finally {
 			setLoading(false);
 		}
